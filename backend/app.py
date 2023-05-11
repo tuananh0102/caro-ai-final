@@ -9,6 +9,9 @@ from flask_cors import CORS, cross_origin
 
 from TicTacToeAi import TicTacToeAI
 
+from lib.ai import GomokuAI
+from lib.gomoku import ai_move
+
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -18,7 +21,7 @@ team_id = 123 # team_id mặc định
 game_info = {}  # Thông tin trò chơi để hiển thị trên giao diện
 stop_thread = False  # Biến dùng để dừng thread lắng nghe
 
-ai = TicTacToeAI('X')  # Khởi tạo AI chạy mặc định với đội X
+ai = GomokuAI()  # Khởi tạo AI chạy mặc định với đội X
 
 
 # Giao tiếp với trọng tài qua API:
@@ -32,8 +35,23 @@ class GameClient:
         self.board = None
         self.init = None
         self.size = None
-        self.ai = None
+        self.ai = ai
         self.room_id = None
+        self.first = True
+
+    def getStepOfCompetitor(self,newBoard):
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.board[i][j] != newBoard[i][j]:
+                    return i,j
+
+    def init_board(self):
+        board = []
+        for i in range(self.size):
+            board.append([' '])
+            for j in range(self.size):
+                board[i].append(' ')
+        return board
 
     def listen(self):
         # Lắng nghe yêu cầu từ server trọng tài
@@ -68,11 +86,43 @@ class GameClient:
             elif data.get("board"):
                 # Nếu là lượt đi của đội của mình thì gửi nước đi             
                 log_game_info(game_info=game_info)
+                self.size = int(data.get("size"))
+                if(self.board == None):
+                    self.board = self.init_board()
                 if data.get("turn") in self.team_id:
-                    self.size = int(data.get("size"))
-                    self.board = copy.deepcopy(data.get("board"))
-                    # Lấy nước đi từ AI, nước đi là một tuple (i, j)
-                    move = ai.get_move(self.board, self.size)
+                    move = []
+                    if self.team_roles.upper() == 'X' and self.first:
+                        self.first = False
+                        self.board = copy.deepcopy(data.get("board"))
+                        
+                        move = self.ai.firstMove()
+                        self.ai.turn *= -1
+                    else:
+                        move_i, move_j = self.getStepOfCompetitor(data.get("board"))
+                        ai.boardValue = ai.evaluate(move_i, move_j, ai.boardValue, -1, ai.nextBound)
+                        ai.updateBound(move_i, move_j, ai.nextBound)
+                        ai.currentI, ai.currentJ = move_i, move_j
+                        # Make the move and update zobrist hash
+                        turn = 1
+                       
+                        ai.setState(move_i, move_j, -1)
+                        ai.rollingHash ^= ai.zobristTable[move_i][move_j][1]
+                        ai.emptyCells -= 1                
+                        result =  ai.checkResult()
+                        ai.turn *= -1
+                        self.board = copy.deepcopy(data.get("board"))
+                        # Lấy nước đi từ AI, nước đi là một tuple (i, j)
+                        
+                        move = ai_move(self.ai)
+                        move_i, move_j = move[0], move[1]
+                        # Make the move and update zobrist hash
+                        ai.setState(move_i, move_j, 1)
+                        ai.rollingHash ^= ai.zobristTable[move_i][move_j][0]
+                        ai.emptyCells -= 1
+
+                        result = ai.checkResult()
+                        # Switch turn
+                        self.ai.turn *= -1
                     print("Move: ", move)
                     # Kiểm tra nước đi hợp lệ
                     valid_move = self.check_valid_move(move)
@@ -124,6 +174,7 @@ class GameClient:
         # Điều kiện đơn giản là ô trống mới có thể đánh vào
         if new_move_pos is None:
             return False
+        
         i, j = int(new_move_pos[0]), int(new_move_pos[1])
         if self.board[i][j] == " ":
             return True
