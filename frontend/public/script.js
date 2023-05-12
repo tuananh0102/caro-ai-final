@@ -53,7 +53,7 @@ function handleConfirm() {
     // Hide confirm button
     document.getElementById("confirm-button-container").style.display = "none";
 }
-
+var prevGameBoard;
 function drawBoard() {
     document.getElementsByClassName("gameboard")[0].style.display = "block";
     document.getElementById("roomid-input-container").style.display="none";
@@ -61,19 +61,40 @@ function drawBoard() {
         document.getElementById("status").style.display = "none";
         document.getElementById("confirm-button-container").style.display = "none";
     }
-
+    
     var size = game.size;
     var gameBoard = document.getElementsByClassName("gameboard");
     var gameBoardHTML = "<table cell-spacing = '0'>";
+    
     for (var i = 0; i < size; i++) {
         gameBoardHTML += "<tr>"
         for (var j = 0; j < size; j++) {
-            gameBoardHTML += `<td style='width:${600 / size}px; height:${600 / size}px; font-size:${400 / size}px; font-weight: 300'>`
+            if (prevGameBoard != undefined && game.board[i][j] == 'x' && prevGameBoard[i][j] === ' ') {
+                gameBoardHTML += `<td style='width:${600 / size}px; height:${600 / size}px; font-size:${400 / size}px; font-weight: 300; color: rgb(254,96,93); background-color: rgba(238, 238, 238, 0.5); border: 3px solid rgb(254,96,93); border-collapse: collapse;'>`
+                    + game.board[i][j]
+                    + "</td>"
+            }
+            else if (prevGameBoard != undefined && game.board[i][j] == 'o' && prevGameBoard[i][j] === ' ') {
+                gameBoardHTML += `<td style='width:${600 / size}px; height:${600 / size}px; font-size:${400 / size}px; font-weight: 300; color: #3DC4F3; background-color: rgba(238, 238, 238, 0.5); border: 3px solid #3DC4F3; border-collapse: collapse;'>`
+                    + game.board[i][j]
+                    + "</td>"
+            }
+                         
+            else if (game.board[i][j] == 'x'){
+                gameBoardHTML += `<td style='width:${600 / size}px; height:${600 / size}px; font-size:${400 / size}px; font-weight: 300; color: rgb(254,96,93)'>`
                 + game.board[i][j]
                 + "</td>"
+            }
+            else {
+                gameBoardHTML += `<td style='width:${600 / size}px; height:${600 / size}px; font-size:${400 / size}px; font-weight: 300; color: #3DC4F3'>`
+                + game.board[i][j]
+                + "</td>"
+            }
+
         }
         gameBoardHTML += "</tr>";
     }
+    prevGameBoard = game.board;
     gameBoardHTML += "</table>";
     gameBoard[0].innerHTML = gameBoardHTML;
 
@@ -130,13 +151,12 @@ function render() {
         avatarImg2.src = "resources/player2avatar.png";
       }
     document.getElementById("match-id").innerText = `Match ID: ${game.match_id != undefined ? game.match_id : ""}`
-    document.getElementById('player1-time').innerHTML = game.time1 != undefined ? game.time1 : ""
-    document.getElementById('player2-time').innerHTML = game.time2 != undefined ? game.time2 : ""
+    document.getElementById('player1-time').innerHTML = game.time1 != undefined ? game.time1.toFixed(5) : ""
+    document.getElementById('player2-time').innerHTML = game.time2 != undefined ? game.time2.toFixed(5) : ""
     document.getElementById('score1').innerHTML = game.score1 != undefined ? game.score1 : ""
     document.getElementById('score2').innerHTML = game.score2 != undefined ? game.score2 : ""
 
 }
-
 
 
 

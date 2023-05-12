@@ -83,7 +83,7 @@ class GameClient:
                 self.room_id = data.get("room_id")
 
             # Nhận thông tin trò chơi
-            elif data.get("board"):
+            elif data.get("board") and data.get("status")==None:
                 # Nếu là lượt đi của đội của mình thì gửi nước đi             
                 log_game_info(game_info=game_info)
                 self.size = int(data.get("size"))
@@ -136,7 +136,7 @@ class GameClient:
                         print("Invalid move")
 
             # Kết thúc trò chơi
-            elif data.get("status"):
+            elif data.get("status")!=None:
                 print("Game over")
                 break
 
