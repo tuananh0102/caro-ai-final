@@ -48,7 +48,7 @@ class GameClient:
     def init_board(self):
         board = []
         for i in range(self.size):
-            board.append([' '])
+            board.append([])
             for j in range(self.size):
                 board[i].append(' ')
         return board
@@ -87,6 +87,7 @@ class GameClient:
                 # Nếu là lượt đi của đội của mình thì gửi nước đi             
                 log_game_info(game_info=game_info)
                 self.size = int(data.get("size"))
+                
                 if(self.board == None):
                     self.board = self.init_board()
                 if data.get("turn") in self.team_id:
